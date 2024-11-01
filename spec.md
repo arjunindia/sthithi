@@ -37,7 +37,7 @@ import { useLibState } from "stithi";
 import { userState } from "./userState";
 
 export const UserComponent = () => {
-    const [userState,setUserState] = useLibState(userState);``
+    const [userState,setUserState] = useLibState(userState);
 
     return (
         <>

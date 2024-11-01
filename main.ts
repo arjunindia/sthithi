@@ -43,7 +43,7 @@ class State<T> {
 }
 
 export const createState = <T>(initialState: T) => {
-  const state = new State(initialState);
+  const state = new State<T>(initialState);
   return state;
 };
 
@@ -63,16 +63,30 @@ export const dispatch = <T>(state: State<T>, updater: (state: T) => T) => {
 export const useLibState = <T>(
   state: State<T>,
 ): readonly [T, (state: T) => void] => {
-  // @todo: implement
-  const getSnapshot = state.get;
-  const setSnapshot = state.set;
+  const getSnapshot = () => state.get();
+  const setSnapshot = (newState: T) => {
+    state.set(newState);
+  };
   const subscribe = (subscriber: () => void) => {
     state.addSubscriber(subscriber);
     return () => {
       state.removeSubscriber(subscriber);
     };
   };
-  const [syncState, setState] = useSyncExternalStore(
+  type SetStateParams<T> = T | SetStateAction<T>;
+  type SetStateAction<T> = (prevState: T) => T;
+  const setState = (newState: SetStateParams<T>) => {
+    if (newState instanceof Function) {
+      setSnapshot(newState(state.get()));
+      state.updateSubscribers();
+      state.runEffects();
+      return;
+    }
+    setSnapshot(newState);
+    state.updateSubscribers();
+    state.runEffects();
+  };
+  const syncState = useSyncExternalStore(
     subscribe,
     getSnapshot,
     setSnapshot,
