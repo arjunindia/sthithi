@@ -18,49 +18,64 @@ class State<T> {
     this.state = newState;
   }
 
-  subscribe(subscriber: () => void) {
+  addSubscriber(subscriber: () => void) {
     this.subscribers.add(subscriber);
-    subscriber();
-    return () => this.subscribers.delete(subscriber);
   }
 
-  dispatch(updater: () => T): void {
-    this.state = updater(this.state);
-    this.subscribers.forEach((subscriber) => subscriber());
+  removeSubscriber(subscriber: () => void) {
+    this.subscribers.delete(subscriber);
+  }
+
+  addEffect(effect: () => void) {
+    this.effects.add(effect);
+  }
+
+  removeEffect(effect: () => void) {
+    this.effects.delete(effect);
+  }
+
+  runEffects() {
     this.effects.forEach((effect) => effect());
+  }
+  updateSubscribers() {
+    this.subscribers.forEach((subscriber) => subscriber());
   }
 }
 
 export const createState = <T>(initialState: T) => {
-  // @todo: implement
   const state = new State(initialState);
   return state;
 };
 
-export const createEffect = (effect: Function, deps: any[]) => {
-  // @todo: implement
-  return effect;
-};
-
-export const dispatch = <T>(state: T, updater: Function) => {
-  // @todo: implement
-  state = updater(state);
-  return state;
-};
-
-export const useLibState = <T>(state: T) => {
-  // @todo: implement
-  const getSnapshot = () => state;
-  const setSnapshot = (newState: T) => {
-    state = newState;
+export const createEffect = <T>(effect: () => void, deps: State<T>[]) => {
+  deps.forEach((dep) => dep.addEffect(effect));
+  return () => {
+    deps.forEach((dep) => dep.removeEffect(effect));
   };
+};
+
+export const dispatch = <T>(state: State<T>, updater: (state: T) => T) => {
+  state.set(updater(state.get()));
+  state.updateSubscribers();
+  state.runEffects();
+};
+
+export const useLibState = <T>(
+  state: State<T>,
+): readonly [T, (state: T) => void] => {
+  // @todo: implement
+  const getSnapshot = state.get;
+  const setSnapshot = state.set;
   const subscribe = (subscriber: () => void) => {
-    subscriber();
+    state.addSubscriber(subscriber);
+    return () => {
+      state.removeSubscriber(subscriber);
+    };
   };
-  const [state, setState] = useSyncExternalStore(
+  const [syncState, setState] = useSyncExternalStore(
     subscribe,
     getSnapshot,
     setSnapshot,
   );
-  return [state, setState];
+  return [syncState, setState];
 };
