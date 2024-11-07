@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "npm:react@^18.3.1";
+import { useSyncExternalStore } from "react";
 
 class State<T> {
   /** The current state of the store */
@@ -105,6 +105,9 @@ export const dispatch = <T>(
   state.runEffects();
 };
 
+type SetStateParams<T> = T | ((prevState: T) => T);
+type DispatchParams<T> = (state: SetStateParams<T>) => void;
+
 /** useLibState is a custom hook that allows you to use the state object in a React component.
  * It returns a tuple of the current state and a function that dispatches a new state to the store.
  * @param state The state object to use.
@@ -112,7 +115,7 @@ export const dispatch = <T>(
  */
 export const useLibState = <T>(
   state: State<T>,
-): readonly [T, (state: T) => void] => {
+): readonly [T, DispatchParams<T>] => {
   const getSnapshot = () => state.get();
   const setSnapshot = (newState: T) => {
     state.set(newState);
@@ -123,8 +126,7 @@ export const useLibState = <T>(
       state.removeSubscriber(subscriber);
     };
   };
-  type SetStateParams<T> = T | SetStateAction<T>;
-  type SetStateAction<T> = (prevState: T) => T;
+
   const setState = (newState: SetStateParams<T>) => {
     if (newState instanceof Function) {
       setSnapshot(newState(state.get()));

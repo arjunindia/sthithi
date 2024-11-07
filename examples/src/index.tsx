@@ -1,5 +1,4 @@
-import React from "npm:react@^18.3.1";
-import ReactDOM from "npm:react-dom@^18.3.1/client";
+import ReactDOM from "react-dom/client";
 import {
   createEffect,
   createState,

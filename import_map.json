@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "jsdom": "https://esm.sh/v102/jsdom@20.0.3"
+  }
+}
